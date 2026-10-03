@@ -81,24 +81,26 @@ def _generate_input_file(
     seed = os.getenv("ABSOLV_PACKMOL_SEED")
     seed = seed if seed is not None else random.randint(1, 99999)
 
-    return "\n".join(
-        [
-            f"tolerance {tolerance:f}",
-            "filetype xyz",
-            "output output.xyz",
-            f"seed {seed}",
+    solute_file, solute_count = components[0]
+ 
+    contents.extend([
+        f"structure {solute_file}",
+        f"  number {solute_count}",
+        f"  fixed {center} {center} {center} 0.0 0.0 0.0",
+        "end structure",
+        "",
+    ])
+    
+    for file_name, count in components[1:]:
+        contents.extend([
+            f"structure {file_name}",
+            f"  number {count}",
+            f"  inside box 0.0 0.0 0.0 {box_size} {box_size} {box_size}",
+            "end structure",
             "",
-            *[
-                f"structure {file_name}\n"
-                f"  number {count}\n"
-                f"  inside box 0. 0. 0. {box_size} {box_size} {box_size}\n"
-                "end structure\n"
-                ""
-                for file_name, count in components
-            ],
-        ]
-    )
-
+        ])
+    
+    return "\n".join(contents)
 
 # changed: now tests importing a molecule from a file first
 def _molecule_from_smiles(smiles: str) -> openff.toolkit.Molecule:
