@@ -190,6 +190,7 @@ def _setup_solvent(
     n_solute_molecules: int,
     n_solvent_molecules: int,
     custom_alchemical_potential: str | None = None,
+    box_target_density=0.95 * openmm.unit.grams/openmm.unit.milliliters,
 ) -> PreparedSystem:
     """Creates the input files for a particular solvent phase.
 
@@ -209,7 +210,10 @@ def _setup_solvent(
 
     is_vacuum = n_solvent_molecules == 0
 
-    topology_off, coords = absolv.setup.setup_system(components)
+    topology_off, coords = absolv.setup.setup_system(
+        components,
+        box_target_density=box_target_density,
+    )
     topology_off.box_vectors = None if is_vacuum else topology_off.box_vectors
 
     if isinstance(force_field, openff.toolkit.ForceField):
@@ -238,6 +242,8 @@ def setup(
     config: absolv.config.Config,
     force_field: openff.toolkit.ForceField | absolv.utils.openmm.SystemGenerator,
     custom_alchemical_potential: str | None = None,
+    box_target_density_a=0.95 * openmm.unit.grams/openmm.unit.milliliters,
+    box_target_density_b=0.95 * openmm.unit.grams/openmm.unit.milliliters,
 ) -> tuple[PreparedSystem, PreparedSystem]:
     """Prepare each system to be simulated, namely the ligand in each solvent.
 
@@ -268,6 +274,7 @@ def setup(
         system.n_solute_molecules,
         system.n_solvent_molecules_a,
         custom_alchemical_potential,
+        box_target_density_a,
     )
     solvated_b = _setup_solvent(
         "solvent-b",
@@ -276,6 +283,7 @@ def setup(
         system.n_solute_molecules,
         system.n_solvent_molecules_b,
         custom_alchemical_potential,
+        box_target_density_b,
     )
 
     if system.solvent_a is not None and config.pressure is not None:
